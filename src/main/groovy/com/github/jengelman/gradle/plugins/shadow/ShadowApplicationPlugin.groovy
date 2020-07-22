@@ -93,7 +93,7 @@ class ShadowApplicationPlugin implements Plugin<Project> {
         startScripts.conventionMapping.applicationName = { pluginConvention.applicationName }
         startScripts.conventionMapping.outputDir = { new File(project.buildDir, 'scriptsShadow') }
         startScripts.conventionMapping.defaultJvmOpts = { pluginConvention.applicationDefaultJvmArgs }
-        startScripts.inputs.files jar
+        startScripts.inputs.files project.objects.fileCollection().from { -> jar }
 
     }
 
