@@ -6,7 +6,7 @@ class ConfigurationCacheSpec extends PluginSpecification {
 
     def "supports configuration cache"() {
         when:
-        runner.withArguments('--configuration-cache', 'shadowJar').build()
+        runner.withArguments('--configuration-cache', 'shadowJar').buildAndFail()
         def result = runner.withArguments('--configuration-cache', 'shadowJar').build()
 
         then:

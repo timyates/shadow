@@ -9,6 +9,7 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.*;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.DocumentationRegistry;
@@ -36,6 +37,14 @@ public class ShadowJar extends Jar implements ShadowSpec {
 
     private final ShadowStats shadowStats = new ShadowStats();
     private final GradleVersionUtil versionUtil;
+
+    private final ConfigurableFileCollection includedDependencies = getProject().files(new Callable<FileCollection>() {
+
+        @Override
+        public FileCollection call() throws Exception {
+            return dependencyFilter.resolve(configurations);
+        }
+    });
 
     public ShadowJar() {
         super();
@@ -119,13 +128,7 @@ public class ShadowJar extends Jar implements ShadowSpec {
 
     @Classpath
     public FileCollection getIncludedDependencies() {
-        return getProject().files(new Callable<FileCollection>() {
-
-            @Override
-            public FileCollection call() throws Exception {
-                return dependencyFilter.resolve(configurations);
-            }
-        });
+        return includedDependencies;
     }
 
     /**
