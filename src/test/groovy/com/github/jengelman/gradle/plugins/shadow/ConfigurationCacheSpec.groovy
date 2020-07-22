@@ -4,6 +4,23 @@ import com.github.jengelman.gradle.plugins.shadow.util.PluginSpecification
 
 class ConfigurationCacheSpec extends PluginSpecification {
 
+    def setup() {
+        repo.module('shadow', 'a', '1.0')
+                .insertFile('a.properties', 'a')
+                .insertFile('a2.properties', 'a2')
+                .publish()
+        repo.module('shadow', 'b', '1.0')
+                .insertFile('b.properties', 'b')
+                .publish()
+
+        buildFile << """
+            dependencies {
+               compile 'shadow:a:1.0'
+               compile 'shadow:b:1.0'
+            }
+        """.stripIndent()
+    }
+
     def "supports configuration cache"() {
         given:
         repo.module('shadow', 'a', '1.0')
@@ -42,5 +59,25 @@ class ConfigurationCacheSpec extends PluginSpecification {
 
         then:
         result.output.contains("Reusing configuration cache.")
+    }
+
+    def "configuration caching supports includes"() {
+        given:
+        buildFile << """
+            shadowJar {
+               exclude 'a2.properties'
+            }
+        """.stripIndent()
+
+        when:
+        runner.withArguments('--configuration-cache', 'shadowJar').build()
+        output.delete()
+        runner.withArguments('--configuration-cache', 'shadowJar').build()
+
+        then:
+        contains(output, ['a.properties', 'b.properties'])
+
+        and:
+        doesNotContain(output, ['a2.properties'])
     }
 }
