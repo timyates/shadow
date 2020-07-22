@@ -31,9 +31,9 @@ public class ShadowJar extends Jar implements ShadowSpec {
     private List<Transformer> transformers;
     private List<Relocator> relocators;
     private List<Configuration> configurations;
-    private DependencyFilter dependencyFilter;
+    private transient DependencyFilter dependencyFilter;
     private boolean minimizeJar;
-    private DependencyFilter dependencyFilterForMinimize;
+    private transient DependencyFilter dependencyFilterForMinimize;
 
     private final ShadowStats shadowStats = new ShadowStats();
     private final GradleVersionUtil versionUtil;
