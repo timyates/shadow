@@ -8,6 +8,7 @@ import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator;
 import com.github.jengelman.gradle.plugins.shadow.transformers.*;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -24,6 +25,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @CacheableTask
 public class ShadowJar extends Jar implements ShadowSpec {
@@ -34,6 +37,7 @@ public class ShadowJar extends Jar implements ShadowSpec {
     private DependencyFilter dependencyFilter;
     private boolean minimizeJar;
     private DependencyFilter dependencyFilterForMinimize;
+    private List<ArtifactCollection> artifactCollections;
 
     private final ShadowStats shadowStats = new ShadowStats();
     private final GradleVersionUtil versionUtil;
@@ -42,7 +46,7 @@ public class ShadowJar extends Jar implements ShadowSpec {
 
         @Override
         public FileCollection call() throws Exception {
-            return dependencyFilter.resolve(configurations);
+            return dependencyFilter.resolve(artifactCollections);
         }
     });
 
@@ -56,6 +60,7 @@ public class ShadowJar extends Jar implements ShadowSpec {
         transformers = new ArrayList<>();
         relocators = new ArrayList<>();
         configurations = new ArrayList<>();
+        artifactCollections = new ArrayList<>();
 
         this.getInputs().property("minimize", new Callable<Boolean>() {
             @Override
@@ -380,12 +385,21 @@ public class ShadowJar extends Jar implements ShadowSpec {
         this.relocators = relocators;
     }
 
-    @Classpath @Optional
+    @Internal
     public List<Configuration> getConfigurations() {
         return this.configurations;
     }
 
+    @Classpath @Optional
+    public List<ArtifactCollection> getArtifactCollections() {
+        return artifactCollections;
+    }
+
     public void setConfigurations(List<Configuration> configurations) {
+        this.artifactCollections = new ArrayList<>();
+        for (Configuration c : configurations) {
+            artifactCollections.add(c.getIncoming().getArtifacts());
+        };
         this.configurations = configurations;
     }
 

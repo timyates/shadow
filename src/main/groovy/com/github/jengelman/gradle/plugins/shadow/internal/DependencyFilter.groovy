@@ -1,5 +1,6 @@
 package com.github.jengelman.gradle.plugins.shadow.internal
 
+import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ResolvedDependency
@@ -21,6 +22,8 @@ interface DependencyFilter {
      * @return
      */
     FileCollection resolve(Collection<Configuration> configurations)
+
+    FileCollection resolveArtifacts(Collection<ArtifactCollection> artifactCollection)
 
     /**
      * Exclude dependencies that match the provided spec.

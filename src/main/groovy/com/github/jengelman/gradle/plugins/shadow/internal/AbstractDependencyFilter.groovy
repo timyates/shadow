@@ -2,16 +2,20 @@ package com.github.jengelman.gradle.plugins.shadow.internal
 
 import groovy.util.logging.Slf4j
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.specs.Spec
 import org.gradle.api.specs.Specs
 
 @Slf4j
 abstract class AbstractDependencyFilter implements DependencyFilter {
     private final Project project
+    private final ObjectFactory objectFactory
 
     protected final List<Spec<? super ResolvedDependency>> includeSpecs = []
     protected final List<Spec<? super ResolvedDependency>> excludeSpecs = []
@@ -19,11 +23,16 @@ abstract class AbstractDependencyFilter implements DependencyFilter {
     AbstractDependencyFilter(Project project) {
         assert project
         this.project = project
+        this.objectFactory = project.objects
     }
 
     abstract protected void resolve(Set<ResolvedDependency> dependencies,
                                     Set<ResolvedDependency> includedDependencies,
                                     Set<ResolvedDependency> excludedDependencies)
+
+    abstract protected void resolveArtifacts(Set<ResolvedArtifactResult> dependencies,
+                                             Set<ResolvedArtifactResult> includedDependencies,
+                                             Set<ResolvedArtifactResult> excludedDependencies)
 
     FileCollection resolve(Configuration configuration) {
         Set<ResolvedDependency> includedDeps = []
@@ -34,7 +43,20 @@ abstract class AbstractDependencyFilter implements DependencyFilter {
         }.flatten())
     }
 
+    FileCollection resolve(ArtifactCollection collection) {
+        Set<ResolvedArtifactResult> includedDeps = []
+        Set<ResolvedArtifactResult> excludedDeps = []
+        resolveArtifacts(collection.getArtifacts(), includedDeps, excludedDeps)
+        return collection.artifactFiles - objectFactory.fileCollection().from(excludedDeps*.file)
+    }
+
     FileCollection resolve(Collection<Configuration> configurations) {
+        configurations.collect {
+            resolve(it)
+        }.sum() as FileCollection ?: project.files()
+    }
+
+    FileCollection resolveArtifacts(Collection<ArtifactCollection> configurations) {
         configurations.collect {
             resolve(it)
         }.sum() as FileCollection ?: project.files()
@@ -113,6 +135,12 @@ abstract class AbstractDependencyFilter implements DependencyFilter {
     }
 
     protected boolean isIncluded(ResolvedDependency dependency) {
+        boolean include = includeSpecs.empty || includeSpecs.any { it.isSatisfiedBy(dependency) }
+        boolean exclude = !excludeSpecs.empty && excludeSpecs.any { it.isSatisfiedBy(dependency) }
+        return include && !exclude
+    }
+
+    protected boolean isIncluded(ResolvedArtifactResult dependency) {
         boolean include = includeSpecs.empty || includeSpecs.any { it.isSatisfiedBy(dependency) }
         boolean exclude = !excludeSpecs.empty && excludeSpecs.any { it.isSatisfiedBy(dependency) }
         return include && !exclude
