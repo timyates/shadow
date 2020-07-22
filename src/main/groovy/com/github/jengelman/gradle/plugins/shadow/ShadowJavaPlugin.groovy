@@ -81,7 +81,7 @@ class ShadowJavaPlugin implements Plugin<Project> {
             project.configurations.findByName(ShadowBasePlugin.CONFIGURATION_NAME)
         }
         shadow.doFirst {
-            if (files) {
+            if (!files.empty) {
                 libs.addAll files.collect { "${it.name}" }
                 manifest.attributes 'Class-Path': libs.findAll { it }.join(' ')
             }
