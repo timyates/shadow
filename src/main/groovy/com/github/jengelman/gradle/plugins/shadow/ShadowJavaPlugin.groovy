@@ -76,12 +76,13 @@ class ShadowJavaPlugin implements Plugin<Project> {
             }
         }
         shadow.manifest.inheritFrom project.tasks.jar.manifest
-        def libs = [project.tasks.jar.manifest.attributes.get('Class-Path')]
+        def libsProvider = project.provider { -> [project.tasks.jar.manifest.attributes.get('Class-Path')] }
         def files = project.objects.fileCollection().from { ->
             project.configurations.findByName(ShadowBasePlugin.CONFIGURATION_NAME)
         }
         shadow.doFirst {
             if (!files.empty) {
+                def libs = libsProvider.get()
                 libs.addAll files.collect { "${it.name}" }
                 manifest.attributes 'Class-Path': libs.findAll { it }.join(' ')
             }
